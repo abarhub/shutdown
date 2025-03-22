@@ -8,6 +8,11 @@
 #include <string>
 #include <format>
 #include <sstream>
+#include <thread>
+#include <filesystem>
+#include <fstream>
+
+//namespace fs = std::filesystem;
 
 struct Heure {
     int heure;
@@ -78,7 +83,7 @@ Heure* initialise(int argc, char* argv[]) {
     bool trouve = false;
     heure = 15;
     minute = 0;
-    if (argc == 3) {
+    if (argc >= 3) {
         char *heureStr = argv[1];
         char* minuteStr = argv[2];
         int heure2 = strtol(heureStr, NULL, 10);
@@ -97,7 +102,7 @@ Heure* initialise(int argc, char* argv[]) {
 
 
 
-void reboot() {
+void arret() {
 
     std::cout << heureDebut() << "Arret ...\n";
     int res = ExitWindowsEx(EWX_POWEROFF, 0);
@@ -166,6 +171,41 @@ long difference(Heure* heureCourante, Heure* heureLimite) {
     }
 }
 
+bool exists_test(const std::string& name) {
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
+}
+
+std::string& getEtat(std::string fichier) {
+    //if (fs::exists(fichier)) {
+
+    //}
+
+    std::ifstream infile(fichier);
+
+    //std::ifstream myfile;
+    //myfile.open("file.txt");
+    std::string line;
+    while (std::getline(infile, line))
+    {
+        std::cout << heureDebut() << "ligne: '"<<line<<"'\n";
+    }
+
+    std::string s= std::string();
+    return s;
+}
+
+// The function we want to execute on the new thread.
+void task1(std::string fichier)
+{
+    std::cout << "task1 says: " << fichier;
+
+    std::string etat;
+    //etat = getEtat(fichier);
+    std::cout << heureDebut() << "etat: " << etat << "\n";
+    std::cout << heureDebut() << "suite ...\n";
+}
+
 int main(int argc, char* argv[])
 {
     std::cout<< heureDebut() << "Hello World!\n";
@@ -186,10 +226,24 @@ int main(int argc, char* argv[])
             std::cerr << heureDebut() << "pb de calcul de la duree"<< duree<<"\n";
             exit(1);
         }
+
+        std::string fichier = "";
+        if (argc >= 4) {
+            fichier = argv[3];
+        }
+
+        if (fichier.size() > 0) {
+            std::cout << heureDebut() << "démarrage du thread ...\n";
+            std::thread t1(task1, fichier);
+            std::cout << heureDebut() << "démarrage du thread ok\n";
+        }
+
         std::cout << heureDebut() << "attente"<< duree <<" secondes\n";
         Sleep(duree);
 
         std::cout << heureDebut() << "arret de l'ordinateur ...\n";
+
+        arret();
     }
     else {
         std::cout << heureDebut() << "fin\n";
