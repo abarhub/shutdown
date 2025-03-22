@@ -5,6 +5,9 @@
 #include <iostream>
 #include <time.h>
 #include <synchapi.h>
+#include <string>
+#include <format>
+#include <sstream>
 
 struct Heure {
     int heure;
@@ -13,6 +16,32 @@ struct Heure {
 };
 
 typedef struct Heure Heure;
+
+std::string heureDebut() {
+    struct tm newtime;
+    __time64_t long_time;
+    errno_t err;
+    std::string mystr;
+    _time64(&long_time);
+    // Convert to local time.
+    err = _localtime64_s(&newtime, &long_time);
+    if (err)
+    {
+        std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
+        exit(1);
+    }
+
+    std::ostringstream oss;
+
+    oss << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec<<" : ";
+
+    mystr = oss.str();
+    //std::string formatted_str = std::format(
+    //    "My name is {1:.2s} and pi is {0:.2f}", 1, 2);
+
+    //return std::format("{}:{}:{}", newtime.tm_hour, newtime.tm_min, newtime.tm_sec);
+    return mystr;
+}
 
 Heure *getHeure() {
     Heure* resultat;
@@ -26,7 +55,7 @@ Heure *getHeure() {
     err = _localtime64_s(&newtime, &long_time);
     if (err)
     {
-        std::cerr << "Invalid argument to _localtime64_s.\n";
+        std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
         exit(1);
     }
 
@@ -39,7 +68,7 @@ Heure *getHeure() {
 
 void affiche(Heure *heure) {
     if (heure != NULL) {
-        std::cout << "heure:" << heure->heure << ":" << heure->minute<<":"<<heure->seconde << "\n";
+        std::cout << heureDebut() << "heure:" << heure->heure << ":" << heure->minute<<":"<<heure->seconde << "\n";
     }
 }
 
@@ -70,13 +99,13 @@ Heure* initialise(int argc, char* argv[]) {
 
 void reboot() {
 
-    std::cout << "Arret ...\n";
+    std::cout << heureDebut() << "Arret ...\n";
     int res = ExitWindowsEx(EWX_POWEROFF, 0);
     if (res == 0) {
-        std::cout << "Arret OK\n";
+        std::cout << heureDebut() << "Arret OK\n";
     }
     else {
-        std::cout << "Arret erreur : "<<res<<"\n";
+        std::cout << heureDebut() << "Arret erreur : "<<res<<"\n";
     }
     
 }
@@ -84,11 +113,11 @@ void reboot() {
 bool limiteDepasse(Heure* heureCourante, Heure*heureLimite) {
 
     if (heureCourante == NULL) {
-        std::cerr << "heure courante null\n";
+        std::cerr << heureDebut() << "heure courante null\n";
         exit(1);
     }
     if (heureLimite == NULL) {
-        std::cerr << "heure limite null\n";
+        std::cerr << heureDebut() << "heure limite null\n";
         exit(1);
     }
 
@@ -110,7 +139,7 @@ bool limiteDepasse(Heure* heureCourante, Heure*heureLimite) {
 
 long dureeMSecondes(Heure* heure) {
     if (heure == NULL) {
-        std::cerr << "heure courante null\n";
+        std::cerr << heureDebut() << "heure courante null\n";
         exit(1);
     }
     long h = heure->heure*60*60  +heure->minute*60 + heure->seconde;
@@ -119,11 +148,11 @@ long dureeMSecondes(Heure* heure) {
 
 long difference(Heure* heureCourante, Heure* heureLimite) {
     if (heureCourante == NULL) {
-        std::cerr << "heure courante null\n";
+        std::cerr << heureDebut() << "heure courante null\n";
         exit(1);
     }
     if (heureLimite == NULL) {
-        std::cerr << "heure limite null\n";
+        std::cerr << heureDebut() << "heure limite null\n";
         exit(1);
     }
     long h1=0, h2=0;
@@ -139,31 +168,31 @@ long difference(Heure* heureCourante, Heure* heureLimite) {
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello World!\n";
+    std::cout<< heureDebut() << "Hello World!\n";
 
     Heure* heureCourante, * heureLimite;
 
     heureCourante = getHeure();
     heureLimite = initialise(argc,argv);
 
-    std::cout << "heure courante: "<<"\n";
+    std::cout << heureDebut() << "heure courante: "<<"\n";
     affiche(heureCourante);
     affiche(heureLimite);
 
-    if (!limiteDepasse(heureCourante, heureLimite) >= 0) {
+    if (!limiteDepasse(heureCourante, heureLimite)) {
         
         long duree = difference(heureCourante, heureLimite);
         if (duree == -1) {
-            std::cerr << "pb de calcul de la duree"<< duree<<"\n";
+            std::cerr << heureDebut() << "pb de calcul de la duree"<< duree<<"\n";
             exit(1);
         }
-        std::cout << "attente"<< duree <<" secondes\n";
+        std::cout << heureDebut() << "attente"<< duree <<" secondes\n";
         Sleep(duree);
 
-        std::cout << "arret de l'ordinateur ...\n";
+        std::cout << heureDebut() << "arret de l'ordinateur ...\n";
     }
     else {
-        std::cout << "fin\n";
+        std::cout << heureDebut() << "fin\n";
     }
 
 }
