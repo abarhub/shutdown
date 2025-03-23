@@ -26,7 +26,7 @@ typedef struct Heure Heure;
 
 #define ETAT_EN_COURS "en_cours"
 #define ETAT_FIN "fin"
-#define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<"\n"; m_screen.unlock(); }
+#define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<std::endl; m_screen.unlock(); }
 
 std::mutex m_screen;
 std::string etatCourant;
@@ -92,12 +92,15 @@ Heure* initialise(int argc, char* argv[]) {
 	bool trouve = false;
 	heure = 15;
 	minute = 0;
+
+	AFFICHE("argc:"<< argc);
+
 	if (argc >= 3) {
 		char* heureStr = argv[1];
 		char* minuteStr = argv[2];
 		int heure2 = strtol(heureStr, NULL, 10);
 		int minute2 = strtol(minuteStr, NULL, 10);
-		if (heure2 > 0 && heure2 < 20 && minute2>0 && minute2 < 60) {
+		if (heure2 > 0 && heure2 < 24 && minute2>0 && minute2 < 60) {
 			trouve = true;
 			heure = heure2;
 			minute = minute2;
@@ -113,14 +116,50 @@ Heure* initialise(int argc, char* argv[]) {
 
 void arret() {
 
-	std::cout << heureDebut() << "Arret ...\n";
-	int res = ExitWindowsEx(EWX_POWEROFF, 0);
-	InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE, SHTDN_REASON_MAJOR_APPLICATION);
+	//std::cout << heureDebut() << "Arret ...\n";
+	AFFICHE("Arret ...");
+
+	HANDLE hToken;
+	TOKEN_PRIVILEGES tkp;
+
+	// Get a token for this process. 
+
+	if (!OpenProcessToken(GetCurrentProcess(),
+		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+		AFFICHE("Erreur: problème pour avoir le provilège d'arret du PC");
+		return;
+	}
+		
+
+	// Get the LUID for the shutdown privilege. 
+
+	LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME,
+		&tkp.Privileges[0].Luid);
+
+	tkp.PrivilegeCount = 1;  // one privilege to set    
+	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	// Get the shutdown privilege for this process. 
+
+	bool res2=AdjustTokenPrivileges(hToken, FALSE, &tkp, 0,
+		(PTOKEN_PRIVILEGES)NULL, 0);
+
+	int res3 = GetLastError();
+	//if (res2!=0) {
+	if(res3!=ERROR_SUCCESS) {
+		AFFICHE("Erreur: problème pour ajuster le provilège d'arret du PC : "<<res2<<" ("<< res3 <<")");
+		return;
+	}
+
+	//int res = ExitWindowsEx(EWX_POWEROFF, 0);
+	int res = InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE, SHTDN_REASON_MAJOR_APPLICATION);
 	if (res == 0) {
-		std::cout << heureDebut() << "Arret OK\n";
+		AFFICHE("Arret OK");
+		//std::cout << heureDebut() << "Arret OK\n";
 	}
 	else {
-		std::cout << heureDebut() << "Arret erreur : " << res << "\n";
+		AFFICHE("Arret erreur : "<<res);
+		//std::cout << heureDebut() << "Arret erreur : " << res << "\n";
 	}
 
 }
@@ -215,7 +254,7 @@ std::string getEtat(std::string fichier) {
 	return s;
 }
 
-void affiche(std::ostringstream str) {
+/*void affiche(std::ostringstream str) {
 	std::cout << str.str();
 }
 
@@ -223,7 +262,7 @@ void affiche2(const char* str) {
 	m_screen.lock();
 	printf("%s\n", str);
 	m_screen.unlock();
-}
+}*/
 
 // The function we want to execute on the new thread.
 void task1(std::string fichier)
@@ -268,6 +307,26 @@ void task1(std::string fichier)
 	AFFICHE("fin de l'analyse de l'état");
 }
 
+void afficheDate() {
+	time_t now = time(0);
+	struct tm newtime;
+	localtime_s(&newtime, &now);
+	//tm* ltm = localtime(&now);
+
+	std::string s;
+
+	int annee = 1900 + newtime.tm_year;
+	int mois = 1 + newtime.tm_mon;
+	int jour = newtime.tm_mday;
+	int heure = newtime.tm_hour;
+	int minute = newtime.tm_min;
+	int secondes = newtime.tm_sec;
+
+	char buf[1024]; 
+	sprintf_s(buf,sizeof(buf), "%02d/%02d/%04d %02d:%02d:%02d", jour,mois,annee,heure,minute,secondes);
+	AFFICHE("date: "<< std::string(buf));
+}
+
 int main(int argc, char* argv[])
 {
 	//std::osyncstream bout(std::cout);
@@ -284,7 +343,8 @@ int main(int argc, char* argv[])
 	heureCourante = getHeure();
 	heureLimite = initialise(argc, argv);
 
-	AFFICHE("heure courante: ");
+	
+	afficheDate();
 	affiche(heureCourante);
 	affiche(heureLimite);
 
