@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
         //str.clear();
         //str << heureDebut() << "attente" << duree << " secondes\n";
         //std::cout << str.str();
-        AFFICHE("attente" << duree << " secondes");
+        AFFICHE("attente " << duree << " secondes");
         //m_screen.unlock();
         Sleep(duree);
 
