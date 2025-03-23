@@ -17,9 +17,9 @@
 //namespace fs = std::filesystem;
 
 struct Heure {
-    int heure;
-    int minute;
-    int seconde;
+	int heure;
+	int minute;
+	int seconde;
 };
 
 typedef struct Heure Heure;
@@ -32,309 +32,309 @@ std::mutex m_screen;
 std::string etatCourant;
 
 std::string heureDebut() {
-    struct tm newtime;
-    __time64_t long_time;
-    errno_t err;
-    std::string mystr;
-    _time64(&long_time);
-    // Convert to local time.
-    err = _localtime64_s(&newtime, &long_time);
-    if (err)
-    {
-        std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
-        exit(1);
-    }
+	struct tm newtime;
+	__time64_t long_time;
+	errno_t err;
+	std::string mystr;
+	_time64(&long_time);
+	// Convert to local time.
+	err = _localtime64_s(&newtime, &long_time);
+	if (err)
+	{
+		std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
+		exit(1);
+	}
 
-    std::ostringstream oss;
+	std::ostringstream oss;
 
-    oss << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec<<" : ";
+	oss << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec << " : ";
 
-    mystr = oss.str();
-    //std::string formatted_str = std::format(
-    //    "My name is {1:.2s} and pi is {0:.2f}", 1, 2);
+	mystr = oss.str();
+	//std::string formatted_str = std::format(
+	//    "My name is {1:.2s} and pi is {0:.2f}", 1, 2);
 
-    //return std::format("{}:{}:{}", newtime.tm_hour, newtime.tm_min, newtime.tm_sec);
-    return mystr;
+	//return std::format("{}:{}:{}", newtime.tm_hour, newtime.tm_min, newtime.tm_sec);
+	return mystr;
 }
 
-Heure *getHeure() {
-    Heure* resultat;
-    struct tm newtime;
-    __time64_t long_time;
-    errno_t err;
+Heure* getHeure() {
+	Heure* resultat;
+	struct tm newtime;
+	__time64_t long_time;
+	errno_t err;
 
-    // Get time as 64-bit integer.
-    _time64(&long_time);
-    // Convert to local time.
-    err = _localtime64_s(&newtime, &long_time);
-    if (err)
-    {
-        std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
-        exit(1);
-    }
+	// Get time as 64-bit integer.
+	_time64(&long_time);
+	// Convert to local time.
+	err = _localtime64_s(&newtime, &long_time);
+	if (err)
+	{
+		std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
+		exit(1);
+	}
 
-    resultat = new Heure();
-    resultat->heure = newtime.tm_hour;
-    resultat->minute = newtime.tm_min;
-    resultat->seconde = newtime.tm_sec;
-    return resultat;
+	resultat = new Heure();
+	resultat->heure = newtime.tm_hour;
+	resultat->minute = newtime.tm_min;
+	resultat->seconde = newtime.tm_sec;
+	return resultat;
 }
 
-void affiche(Heure *heure) {
-    if (heure != NULL) {
-        std::cout << heureDebut() << "heure:" << heure->heure << ":" << heure->minute<<":"<<heure->seconde << "\n";
-    }
+void affiche(Heure* heure) {
+	if (heure != NULL) {
+		std::cout << heureDebut() << "heure:" << heure->heure << ":" << heure->minute << ":" << heure->seconde << "\n";
+	}
 }
 
 Heure* initialise(int argc, char* argv[]) {
-    Heure* resultat;
-    int heure, minute;
-    bool trouve = false;
-    heure = 15;
-    minute = 0;
-    if (argc >= 3) {
-        char *heureStr = argv[1];
-        char* minuteStr = argv[2];
-        int heure2 = strtol(heureStr, NULL, 10);
-        int minute2= strtol(minuteStr, NULL, 10);
-        if (heure2 > 0 && heure2 < 20 && minute2>0 && minute2 < 60) {
-            trouve = true;
-            heure = heure2;
-            minute = minute2;
-        }
-    }
-    resultat = new Heure();
-    resultat->heure = heure;
-    resultat->minute = minute;
-    return resultat;
+	Heure* resultat;
+	int heure, minute;
+	bool trouve = false;
+	heure = 15;
+	minute = 0;
+	if (argc >= 3) {
+		char* heureStr = argv[1];
+		char* minuteStr = argv[2];
+		int heure2 = strtol(heureStr, NULL, 10);
+		int minute2 = strtol(minuteStr, NULL, 10);
+		if (heure2 > 0 && heure2 < 20 && minute2>0 && minute2 < 60) {
+			trouve = true;
+			heure = heure2;
+			minute = minute2;
+		}
+	}
+	resultat = new Heure();
+	resultat->heure = heure;
+	resultat->minute = minute;
+	return resultat;
 }
 
 
 
 void arret() {
 
-    std::cout << heureDebut() << "Arret ...\n";
-    int res = ExitWindowsEx(EWX_POWEROFF, 0);
-    if (res == 0) {
-        std::cout << heureDebut() << "Arret OK\n";
-    }
-    else {
-        std::cout << heureDebut() << "Arret erreur : "<<res<<"\n";
-    }
-    
+	std::cout << heureDebut() << "Arret ...\n";
+	int res = ExitWindowsEx(EWX_POWEROFF, 0);
+	if (res == 0) {
+		std::cout << heureDebut() << "Arret OK\n";
+	}
+	else {
+		std::cout << heureDebut() << "Arret erreur : " << res << "\n";
+	}
+
 }
 
-bool limiteDepasse(Heure* heureCourante, Heure*heureLimite) {
+bool limiteDepasse(Heure* heureCourante, Heure* heureLimite) {
 
-    if (heureCourante == NULL) {
-        std::cerr << heureDebut() << "heure courante null\n";
-        exit(1);
-    }
-    if (heureLimite == NULL) {
-        std::cerr << heureDebut() << "heure limite null\n";
-        exit(1);
-    }
+	if (heureCourante == NULL) {
+		std::cerr << heureDebut() << "heure courante null\n";
+		exit(1);
+	}
+	if (heureLimite == NULL) {
+		std::cerr << heureDebut() << "heure limite null\n";
+		exit(1);
+	}
 
-    if (heureCourante->heure > heureLimite->heure) {
-        return true;
-    }
-    else if (heureCourante->heure == heureLimite->heure) {
-        if (heureCourante->minute >= heureLimite->minute) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    else {
-        return false;
-    }
+	if (heureCourante->heure > heureLimite->heure) {
+		return true;
+	}
+	else if (heureCourante->heure == heureLimite->heure) {
+		if (heureCourante->minute >= heureLimite->minute) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	else {
+		return false;
+	}
 }
 
 long dureeMSecondes(Heure* heure) {
-    if (heure == NULL) {
-        std::cerr << heureDebut() << "heure courante null\n";
-        exit(1);
-    }
-    long h = heure->heure*60*60  +heure->minute*60 + heure->seconde;
-    return h*1000;
+	if (heure == NULL) {
+		std::cerr << heureDebut() << "heure courante null\n";
+		exit(1);
+	}
+	long h = heure->heure * 60 * 60 + heure->minute * 60 + heure->seconde;
+	return h * 1000;
 }
 
 long difference(Heure* heureCourante, Heure* heureLimite) {
-    if (heureCourante == NULL) {
-        std::cerr << heureDebut() << "heure courante null\n";
-        exit(1);
-    }
-    if (heureLimite == NULL) {
-        std::cerr << heureDebut() << "heure limite null\n";
-        exit(1);
-    }
-    long h1=0, h2=0;
-    h1 = dureeMSecondes(heureCourante);
-    h2= dureeMSecondes(heureLimite);
-    if (h1 > h2) {
-        return -1;
-    }
-    else {
-        return h2 - h1;
-    }
+	if (heureCourante == NULL) {
+		std::cerr << heureDebut() << "heure courante null\n";
+		exit(1);
+	}
+	if (heureLimite == NULL) {
+		std::cerr << heureDebut() << "heure limite null\n";
+		exit(1);
+	}
+	long h1 = 0, h2 = 0;
+	h1 = dureeMSecondes(heureCourante);
+	h2 = dureeMSecondes(heureLimite);
+	if (h1 > h2) {
+		return -1;
+	}
+	else {
+		return h2 - h1;
+	}
 }
 
 bool exists_test(const std::string& name) {
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
+	struct stat buffer;
+	return (stat(name.c_str(), &buffer) == 0);
 }
 
 std::string getEtat(std::string fichier) {
-    std::ifstream infile(fichier);
+	std::ifstream infile(fichier);
 
-    std::string line;
-    std::string s = std::string();
-    while (std::getline(infile, line))
-    {
-        AFFICHE("ligne: '" << line << "'");
-        s = line;
-        if (s.size() >= 4) {
-            //AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2)<< ";" << (int)s.at(3) << ".");
-            //s = s.substr(2);
-        }        
-        if (s.size() >= 8 && s.at(2) == 'f' && s.at(4) == 'i' && s.at(6) == 'n') {
-                //AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2) << ";" << (int)s.at(3) << ".");
-                //s = s.substr(2);        
-                return ETAT_FIN;
-        }
-        if (s.size() >= 8 && s.at(2) == 'e' && s.at(4) == 'n' && s.at(6) == '_' && s.at(8) == 'c' && s.at(10) == 'o' && s.at(12) == 'u' && s.at(14) == 'r' && s.at(16) == 's') {
-            //AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2) << ";" << (int)s.at(3) << ".");
-            //s = s.substr(2);        
-            return ETAT_EN_COURS;
-        }
-        break;
-    }
+	std::string line;
+	std::string s = std::string();
+	while (std::getline(infile, line))
+	{
+		AFFICHE("ligne: '" << line << "'");
+		s = line;
+		if (s.size() >= 4) {
+			//AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2)<< ";" << (int)s.at(3) << ".");
+			//s = s.substr(2);
+		}
+		if (s.size() >= 8 && s.at(2) == 'f' && s.at(4) == 'i' && s.at(6) == 'n') {
+			//AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2) << ";" << (int)s.at(3) << ".");
+			//s = s.substr(2);        
+			return ETAT_FIN;
+		}
+		if (s.size() >= 8 && s.at(2) == 'e' && s.at(4) == 'n' && s.at(6) == '_' && s.at(8) == 'c' && s.at(10) == 'o' && s.at(12) == 'u' && s.at(14) == 'r' && s.at(16) == 's') {
+			//AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2) << ";" << (int)s.at(3) << ".");
+			//s = s.substr(2);        
+			return ETAT_EN_COURS;
+		}
+		break;
+	}
 
-    return s;
+	return s;
 }
 
 void affiche(std::ostringstream str) {
-    std::cout << str.str();
+	std::cout << str.str();
 }
 
-void affiche2(const char *str) {
-    m_screen.lock();
-    printf("%s\n",str);
-    m_screen.unlock();
+void affiche2(const char* str) {
+	m_screen.lock();
+	printf("%s\n", str);
+	m_screen.unlock();
 }
 
 // The function we want to execute on the new thread.
 void task1(std::string fichier)
 {
 
-    /*m_screen.lock();
-    std::cout << "task1 says: " << fichier;
-    m_screen.unlock();*/
-    //AFFICHE("task1");
-    AFFICHE("task1 says: " << fichier);
-    AFFICHE("Vérification de l'état du fichier: "<<fichier);
+	/*m_screen.lock();
+	std::cout << "task1 says: " << fichier;
+	m_screen.unlock();*/
+	//AFFICHE("task1");
+	AFFICHE("task1 says: " << fichier);
+	AFFICHE("Vérification de l'état du fichier: " << fichier);
 
-    bool premier = true;
-    while (true) {
-        std::string etat;
-        etat = getEtat(fichier);
-        
-        /*m_screen.lock();
-        std::cout << heureDebut() << "etat: " << etat << "\n";
-        std::cout << heureDebut() << "suite ...\n";
-        m_screen.unlock();*/
-        if (premier || etat != etatCourant) {
-            AFFICHE("etat: '" << etat<<"'");
-            AFFICHE("suite ...");
-            int n = etat.find(ETAT_FIN);
-            AFFICHE("n="<<n);
-            if (etat.find(ETAT_EN_COURS) != std::string::npos) {
-                AFFICHE("en cours de backup...");
-            }
-            else if (etat.find(ETAT_FIN)!= std::string::npos) {
-                AFFICHE("backup fini");
-                break;
-            }
-            else {
-                AFFICHE("autre etat");
-            }
-            etatCourant = etat;
-            premier = false;
-        }
-        Sleep(60 * 1000);
-    }
-    AFFICHE("fin de l'analyse de l'état");
+	bool premier = true;
+	while (true) {
+		std::string etat;
+		etat = getEtat(fichier);
+
+		/*m_screen.lock();
+		std::cout << heureDebut() << "etat: " << etat << "\n";
+		std::cout << heureDebut() << "suite ...\n";
+		m_screen.unlock();*/
+		if (premier || etat != etatCourant) {
+			AFFICHE("etat: '" << etat << "'");
+			AFFICHE("suite ...");
+			int n = etat.find(ETAT_FIN);
+			AFFICHE("n=" << n);
+			if (etat.find(ETAT_EN_COURS) != std::string::npos) {
+				AFFICHE("en cours de backup...");
+			}
+			else if (etat.find(ETAT_FIN) != std::string::npos) {
+				AFFICHE("backup fini");
+				break;
+			}
+			else {
+				AFFICHE("autre etat");
+			}
+			etatCourant = etat;
+			premier = false;
+		}
+		Sleep(60 * 1000);
+	}
+	AFFICHE("fin de l'analyse de l'état");
 }
 
 int main(int argc, char* argv[])
 {
-    //std::osyncstream bout(std::cout);
-    //std::osyncstream syncstr{ str };
-    //std::ostringstream str{ };
-    //std::cout << heureDebut() << "Hello World!\n";
-    //std::syncstr << heureDebut() << "Hello World!\n";
-    //str << heureDebut() << "Hello World!\n";
-    //std::cout << str.str();
-    //affiche(str << heureDebut() << "Hello World!\n");
+	//std::osyncstream bout(std::cout);
+	//std::osyncstream syncstr{ str };
+	//std::ostringstream str{ };
+	//std::cout << heureDebut() << "Hello World!\n";
+	//std::syncstr << heureDebut() << "Hello World!\n";
+	//str << heureDebut() << "Hello World!\n";
+	//std::cout << str.str();
+	//affiche(str << heureDebut() << "Hello World!\n");
 
-    Heure* heureCourante, * heureLimite;
+	Heure* heureCourante, * heureLimite;
 
-    heureCourante = getHeure();
-    heureLimite = initialise(argc,argv);
+	heureCourante = getHeure();
+	heureLimite = initialise(argc, argv);
 
-    AFFICHE("heure courante: ");
-    affiche(heureCourante);
-    affiche(heureLimite);
+	AFFICHE("heure courante: ");
+	affiche(heureCourante);
+	affiche(heureLimite);
 
-    if (!limiteDepasse(heureCourante, heureLimite)) {
-        
-        long duree = difference(heureCourante, heureLimite);
-        if (duree == -1) {
-            std::cerr << heureDebut() << "pb de calcul de la duree"<< duree<<"\n";
-            exit(1);
-        }
+	if (!limiteDepasse(heureCourante, heureLimite)) {
 
-        std::string fichier = "";
-        if (argc >= 4) {
-            fichier = argv[3];
-        }
+		long duree = difference(heureCourante, heureLimite);
+		if (duree == -1) {
+			std::cerr << heureDebut() << "pb de calcul de la duree" << duree << "\n";
+			exit(1);
+		}
 
-        std::thread* t1;
+		std::string fichier = "";
+		if (argc >= 4) {
+			fichier = argv[3];
+		}
 
-        if (fichier.size() > 0) {
-            //std::cout << heureDebut() << "démarrage du thread ...\n";
-            AFFICHE("démarrage du thread ...");
-            //std::thread t1(task1, fichier);
-            t1 = new std::thread(task1, fichier);
-            //std::cout << heureDebut() << "démarrage du thread ok\n";
-            //m_screen.lock();
-            AFFICHE("démarrage du thread ok");
-            //m_screen.unlock();
-        }
+		std::thread* t1;
 
-        //std::cout << heureDebut() << "attente"<< duree <<" secondes\n";
-        //m_screen.lock();
-        //str.clear();
-        //str << heureDebut() << "attente" << duree << " secondes\n";
-        //std::cout << str.str();
-        AFFICHE("attente " << duree << " secondes");
-        //m_screen.unlock();
-        Sleep(duree);
+		if (fichier.size() > 0) {
+			//std::cout << heureDebut() << "démarrage du thread ...\n";
+			AFFICHE("démarrage du thread ...");
+			//std::thread t1(task1, fichier);
+			t1 = new std::thread(task1, fichier);
+			//std::cout << heureDebut() << "démarrage du thread ok\n";
+			//m_screen.lock();
+			AFFICHE("démarrage du thread ok");
+			//m_screen.unlock();
+		}
 
-        //std::cout << heureDebut() << "arret de l'ordinateur ...\n";
-        //m_screen.lock();
-        //str.clear();
-        //str << heureDebut() << "arret de l'ordinateur ...\n";
-        //std::cout << str.str();
-        AFFICHE("arret de l'ordinateur ...");
-        //m_screen.unlock();
+		//std::cout << heureDebut() << "attente"<< duree <<" secondes\n";
+		//m_screen.lock();
+		//str.clear();
+		//str << heureDebut() << "attente" << duree << " secondes\n";
+		//std::cout << str.str();
+		AFFICHE("attente " << duree << " secondes");
+		//m_screen.unlock();
+		Sleep(duree);
 
-        arret();
-    }
-    else {
-        std::cout << heureDebut() << "fin\n";
-    }
+		//std::cout << heureDebut() << "arret de l'ordinateur ...\n";
+		//m_screen.lock();
+		//str.clear();
+		//str << heureDebut() << "arret de l'ordinateur ...\n";
+		//std::cout << str.str();
+		AFFICHE("arret de l'ordinateur ...");
+		//m_screen.unlock();
+
+		arret();
+	}
+	else {
+		std::cout << heureDebut() << "fin\n";
+	}
 
 }
 
