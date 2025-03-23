@@ -115,6 +115,7 @@ void arret() {
 
 	std::cout << heureDebut() << "Arret ...\n";
 	int res = ExitWindowsEx(EWX_POWEROFF, 0);
+	InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE, SHTDN_REASON_MAJOR_APPLICATION);
 	if (res == 0) {
 		std::cout << heureDebut() << "Arret OK\n";
 	}
