@@ -232,7 +232,7 @@ std::string getEtat(std::string fichier) {
 	std::string s = std::string();
 	while (std::getline(infile, line))
 	{
-		AFFICHE("ligne: '" << line << "'");
+		//AFFICHE("ligne: '" << line << "'");
 		s = line;
 		if (s.size() >= 4) {
 			//AFFICHE("car1:" << (int)s.at(0) << ";" << (int)s.at(1) << ";" << (int)s.at(2)<< ";" << (int)s.at(3) << ".");
