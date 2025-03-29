@@ -39,12 +39,22 @@ typedef struct SMode SMode;
 
 struct SFichier {
 	std::string fichierLog;
+	std::string fichierEtat;
 	SMode* mode1;
 	SMode* mode2;
 	SMode* mode3;
 };
 
 typedef struct SFichier SFichier;
+
+struct SInitialisation {
+	Heure* heure;
+	std::string fichierLog;
+	std::string fichierEtat;
+	bool finProgramme;
+};
+
+typedef struct SInitialisation SInitialisation;
 
 #define ETAT_EN_COURS "en_cours"
 #define ETAT_FIN "fin"
@@ -240,9 +250,12 @@ SFichier* processFile(const std::string& filename) {
 
 			std::cout << "Clé: '" << key << "', Valeur: '" << value << "'" << std::endl;
 			if (key == "fichierLog") {
-				fichier->fichierLog = key;
+				fichier->fichierLog = value;
 			}
-			else if (key == "mode1"|| key == "mode2"|| key == "mode3") {
+			else if (key == "fichierEtat") {
+				fichier->fichierEtat = value;
+			}
+			else if (key == "mode1" || key == "mode2" || key == "mode3") {
 				SMode* mode=NULL;
 				if (key == "mode1") {
 					mode = fichier->mode1;
@@ -288,10 +301,14 @@ SFichier* processFile(const std::string& filename) {
 }
 
 
-Heure* initialise(int argc, char* argv[]) {
-	Heure* resultat;
+SInitialisation* initialise(int argc, char* argv[]) {
+	SInitialisation* resultat;
+	Heure* resultatHeure;
+	std::string fichierEtat = "";
+
 	int heure, minute;
 	bool trouve = false;
+	bool finProgramme = false;
 	heure = 15;
 	minute = 0;
 
@@ -329,11 +346,17 @@ Heure* initialise(int argc, char* argv[]) {
 			exit(1);
 		}
 
+		bool heureTrouve = false;
 		int jourSemaine = newtime.tm_wday;
 		AFFICHE("jour de la semaine:"<< jourSemaine);
 
 		if (fichier != NULL) {
 			int mode = -1;
+
+			if (!fichier->fichierEtat.empty()) {
+				fichierEtat = fichier->fichierEtat;
+			}
+
 			if (fichier->mode1 != NULL) {
 				for (int i = 0; i < fichier->mode1->joursSemaine.size(); i++) {
 					if (jourSemaine == fichier->mode1->joursSemaine[i]) {
@@ -375,16 +398,26 @@ Heure* initialise(int argc, char* argv[]) {
 			}else {
 				AFFICHE("heure:" << heure2->heure<<":"<<heure2->minute);
 				heure = heure2->heure;
-				minute = heure2->minute;					
+				minute = heure2->minute;	
+				heureTrouve = true;
 			}
 		}
 
 		AFFICHE("Fin");
-		//exit(0);
+		if (!heureTrouve) {
+			AFFICHE("pas d'heure => pas d'attente, arret du programme");
+			//exit(0);
+			finProgramme = true;
+		}
 	}
-	resultat = new Heure();
-	resultat->heure = heure;
-	resultat->minute = minute;
+	resultat = new SInitialisation();
+	resultatHeure = new Heure();
+	resultatHeure->heure = heure;
+	resultatHeure->minute = minute;
+	resultat->heure = resultatHeure;
+	resultat->fichierEtat = fichierEtat;
+	resultat->finProgramme = finProgramme;
+
 	return resultat;
 }
 
@@ -615,16 +648,22 @@ int main(int argc, char* argv[])
 	//affiche(str << heureDebut() << "Hello World!\n");
 
 	Heure* heureCourante, * heureLimite;
+	SInitialisation* initialisation = NULL;
 
 	heureCourante = getHeure();
-	heureLimite = initialise(argc, argv);
+	initialisation = initialise(argc, argv);
 
+	if (initialisation == NULL || initialisation->heure==NULL) {
+		std::cerr << heureDebut() << "Erreur d'initialisation" << std::endl;
+		exit(1);
+	}
+	heureLimite = initialisation->heure;
 	
 	afficheDate();
 	affiche(heureCourante);
 	affiche(heureLimite);
 
-	if (!limiteDepasse(heureCourante, heureLimite)) {
+	if (!initialisation->finProgramme&&!limiteDepasse(heureCourante, heureLimite)) {
 
 		long duree = difference(heureCourante, heureLimite);
 		if (duree == -1) {
@@ -636,6 +675,12 @@ int main(int argc, char* argv[])
 		if (argc >= 4) {
 			fichier = argv[3];
 		}
+		else if (!initialisation->fichierEtat.empty()) {
+			fichier = initialisation->fichierEtat;
+		}
+
+		AFFICHE("fichier etat : "<< fichier);
+
 
 		std::thread* t1;
 
