@@ -13,6 +13,12 @@
 #include <fstream>
 #include <syncstream>
 #include <mutex>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 //namespace fs = std::filesystem;
 
@@ -24,12 +30,46 @@ struct Heure {
 
 typedef struct Heure Heure;
 
+struct SMode {
+	Heure* heure;
+	std::vector<int> joursSemaine;
+};
+
+typedef struct SMode SMode;
+
+struct SFichier {
+	std::string fichierLog;
+	SMode* mode1;
+	SMode* mode2;
+	SMode* mode3;
+};
+
+typedef struct SFichier SFichier;
+
 #define ETAT_EN_COURS "en_cours"
 #define ETAT_FIN "fin"
 #define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<std::endl; m_screen.unlock(); }
 
+const std::string LundiStr = "Lu";
+const std::string MardiStr = "Ma";
+const std::string MercrediStr = "Me";
+const std::string JeudiStr = "Je";
+const std::string VendrediStr = "Ve";
+const std::string SamediStr = "Sa";
+const std::string DimancheStr = "Di";
+
+const int LundiNo = 1;
+const int MardiNo = 2;
+const int MercrediNo = 3;
+const int JeudiNo = 4;
+const int VendrediNo = 5;
+const int SamediNo = 6;
+const int DimancheNo = 0;
+
 std::mutex m_screen;
 std::string etatCourant;
+
+SFichier* fichierCourant = NULL;
 
 std::string heureDebut() {
 	struct tm newtime;
@@ -86,6 +126,168 @@ void affiche(Heure* heure) {
 	}
 }
 
+
+// Fonction pour supprimer les espaces en début et fin de ligne
+std::string trim(const std::string& str) {
+	// Trouver le premier caractère non-espace
+	auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
+		return std::isspace(ch);
+		});
+
+	// Trouver le dernier caractère non-espace
+	auto end = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char ch) {
+		return std::isspace(ch);
+		}).base();
+
+	// Retourner la sous-chaîne sans espaces
+	return (start < end) ? std::string(start, end) : "";
+}
+
+int getNoJour(std::string jour) {
+	if (jour == LundiStr) {
+		return LundiNo;
+	}
+	else if (jour == MardiStr) {
+		return MardiNo;
+	}
+	else if (jour == MercrediStr) {
+		return MercrediNo;
+	}
+	else if (jour == JeudiStr) {
+		return JeudiNo;
+	}
+	else if (jour == VendrediStr) {
+		return VendrediNo;
+	}
+	else if (jour == SamediStr) {
+		return SamediNo;
+	}
+	else if (jour == DimancheStr) {
+		return DimancheNo;
+	}
+	else {
+		return -1;
+	}
+}
+
+std::vector<int> stringToVectorInt(const std::string& str) {
+	std::vector<int> result;
+	std::stringstream ss(str); // Utiliser stringstream pour faciliter la division
+	std::string token;
+
+	while (std::getline(ss, token, ',')) { // Lire jusqu'à la virgule
+		// Supprimer les espaces blancs autour du token
+		token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
+
+		try {
+			result.push_back(getNoJour(token)); // Convertir en entier et ajouter au vecteur
+		}
+		catch (const std::invalid_argument& e) {
+			std::cerr << "Erreur : impossible de convertir '" << token << "' en entier.\n";
+			// Gérer l'erreur comme vous le souhaitez (par exemple, ignorer le token)
+			exit(1);
+		}
+		catch (const std::out_of_range& e) {
+			std::cerr << "Erreur : la valeur '" << token << "' est hors de portée pour un entier.\n";
+			// Gérer l'erreur comme vous le souhaitez
+			exit(1);
+		}
+	}
+
+	return result;
+}
+
+// Fonction pour lire et traiter le fichier
+SFichier* processFile(const std::string& filename) {
+	std::ifstream file(filename);
+
+	if (!file.is_open()) {
+		std::cerr << "Impossible d'ouvrir le fichier : " << filename << std::endl;
+		exit(1);
+	}
+
+
+	SFichier* fichier = new SFichier();
+	fichier->fichierLog = "";
+	fichier->mode1 = new SMode();
+	fichier->mode1->heure = NULL;
+	fichier->mode2 = new SMode();
+	fichier->mode2->heure = NULL;
+	fichier->mode3 = new SMode();
+	fichier->mode3->heure = NULL;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		// Ignorer les lignes commençant par #
+		if (!line.empty() && line[0] == '#') {
+			continue;
+		}
+
+		// Supprimer les espaces de début et de fin
+		line = trim(line);
+
+		// Ignorer les lignes vides après le trim
+		if (line.empty()) {
+			continue;
+		}
+
+
+		// Séparer par le premier =
+		size_t pos = line.find('=');
+		if (pos != std::string::npos) {
+			std::string key = trim(line.substr(0, pos));
+			std::string value = trim(line.substr(pos + 1));
+
+			std::cout << "Clé: '" << key << "', Valeur: '" << value << "'" << std::endl;
+			if (key == "fichierLog") {
+				fichier->fichierLog = key;
+			}
+			else if (key == "mode1"|| key == "mode2"|| key == "mode3") {
+				SMode* mode=NULL;
+				if (key == "mode1") {
+					mode = fichier->mode1;
+				}
+				else if (key == "mode2") {
+					mode = fichier->mode2;
+				}
+				else if (key == "mode3") {
+					mode = fichier->mode3;
+				}
+				if (mode != NULL) {
+					size_t pos2 = value.find(';');
+					if (pos2 != std::string::npos) {
+						std::string heure = trim(value.substr(0, pos2));
+						std::string jours = trim(value.substr(pos2 + 1));
+
+						size_t pos3 = heure.find('h');
+						if (pos3 != std::string::npos) {
+							std::string heure2 = trim(heure.substr(0, pos3));
+							std::string minutes = trim(heure.substr(pos3 + 1));
+
+							int heure3 = std::stoi(heure2);
+							int minute2 = std::stoi(minutes);
+
+							if (heure3 >= 0 && heure3 < 24 && minute2 >= 0 && minute2 < 60) {
+								mode->heure = new Heure();
+								mode->heure->heure = heure3;
+								mode->heure->minute = minute2;
+								mode->heure->seconde = 0;
+							}
+						}
+
+						mode->joursSemaine = stringToVectorInt(jours);
+					}
+				}
+			}
+		}
+	}
+
+	file.close();
+
+	return fichier;
+}
+
+
 Heure* initialise(int argc, char* argv[]) {
 	Heure* resultat;
 	int heure, minute;
@@ -105,6 +307,80 @@ Heure* initialise(int argc, char* argv[]) {
 			heure = heure2;
 			minute = minute2;
 		}
+	}
+	else if (argc == 2) {
+
+		std::string s = argv[1];
+
+		AFFICHE("ficher:"<<s);
+
+		SFichier* fichier = processFile(s);
+
+		struct tm newtime;
+		__time64_t long_time;
+		errno_t err;
+		std::string mystr;
+		_time64(&long_time);
+		// Convert to local time.
+		err = _localtime64_s(&newtime, &long_time);
+		if (err)
+		{
+			std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
+			exit(1);
+		}
+
+		int jourSemaine = newtime.tm_wday;
+		AFFICHE("jour de la semaine:"<< jourSemaine);
+
+		if (fichier != NULL) {
+			int mode = -1;
+			if (fichier->mode1 != NULL) {
+				for (int i = 0; i < fichier->mode1->joursSemaine.size(); i++) {
+					if (jourSemaine == fichier->mode1->joursSemaine[i]) {
+						mode = 1;
+						break;
+					}
+				}
+			}
+			if (mode == -1&&fichier->mode2 != NULL) {
+				for (int i = 0; i < fichier->mode2->joursSemaine.size(); i++) {
+					if (jourSemaine == fichier->mode2->joursSemaine[i]) {
+						mode = 2;
+						break;
+					}
+				}
+			}
+			if (mode == -1 && fichier->mode3 != NULL) {
+				for (int i = 0; i < fichier->mode3->joursSemaine.size(); i++) {
+					if (jourSemaine == fichier->mode3->joursSemaine[i]) {
+						mode = 3;
+						break;
+					}
+				}
+			}
+
+			AFFICHE("mode:" << mode);
+			Heure* heure2 = NULL;
+			if (mode == 1) {
+				heure2 = fichier->mode1->heure;
+			}
+			else if (mode == 2) {
+				heure2 = fichier->mode2->heure;
+			}
+			else if (mode == 3) {
+				heure2 = fichier->mode3->heure;
+			}
+			if (heure2 == NULL) {
+				AFFICHE("heure:");
+			}else {
+				AFFICHE("heure:" << heure2->heure<<":"<<heure2->minute);
+				heure = heure2->heure;
+				minute = heure2->minute;					
+			}
+		}
+
+		AFFICHE("Fin");
+		//exit(0);
 	}
 	resultat = new Heure();
 	resultat->heure = heure;
