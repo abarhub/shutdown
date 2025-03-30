@@ -19,6 +19,9 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
+#include <format>
+#include <fstream>
 
 //namespace fs = std::filesystem;
 
@@ -58,7 +61,9 @@ typedef struct SInitialisation SInitialisation;
 
 #define ETAT_EN_COURS "en_cours"
 #define ETAT_FIN "fin"
-#define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<std::endl; m_screen.unlock(); }
+#define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<std::endl; if (!fileLog.empty()) { std::ofstream myfile; myfile.open(fileLog, std::ios_base::app); myfile << str.str()<<std::endl; myfile.close();} m_screen.unlock(); }
+
+const int version = 1;
 
 const std::string LundiStr = "Lu";
 const std::string MardiStr = "Ma";
@@ -78,6 +83,7 @@ const int DimancheNo = 0;
 
 std::mutex m_screen;
 std::string etatCourant;
+std::string fileLog;
 
 SFichier* fichierCourant = NULL;
 
@@ -95,9 +101,11 @@ std::string heureDebut() {
 		exit(1);
 	}
 
+	//std::cout << std::format("The answer is {}.\n", 42);
+
 	std::ostringstream oss;
 
-	oss << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec << " : ";
+	oss << std::setw(2) << std::setfill('0') << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec << " : ";
 
 	mystr = oss.str();
 	//std::string formatted_str = std::format(
@@ -352,6 +360,11 @@ SInitialisation* initialise(int argc, char* argv[]) {
 
 		if (fichier != NULL) {
 			int mode = -1;
+
+			if (!fichier->fichierLog.empty()) {
+				fileLog = fichier->fichierLog;
+				AFFICHE("fichier de log" << fileLog);
+			}
 
 			if (!fichier->fichierEtat.empty()) {
 				fichierEtat = fichier->fichierEtat;
@@ -649,6 +662,8 @@ int main(int argc, char* argv[])
 
 	Heure* heureCourante, * heureLimite;
 	SInitialisation* initialisation = NULL;
+
+	AFFICHE("version : " << version);
 
 	heureCourante = getHeure();
 	initialisation = initialise(argc, argv);
