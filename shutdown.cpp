@@ -23,7 +23,12 @@
 #include <format>
 #include <fstream>
 
-//namespace fs = std::filesystem;
+#include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+
+namespace fs = std::filesystem;
 
 struct Heure {
 	int heure;
@@ -61,6 +66,7 @@ typedef struct SInitialisation SInitialisation;
 
 #define ETAT_EN_COURS "en_cours"
 #define ETAT_FIN "fin"
+#define ETAT_NON_DEMARRE "non_demarre"
 #define AFFICHE(sstream) { m_screen.lock(); std::ostringstream str{ }; str << heureDebut() << sstream; std::cout << str.str()<<std::endl; if (!fileLog.empty()) { std::ofstream myfile; myfile.open(fileLog, std::ios_base::app); myfile << str.str()<<std::endl; myfile.close();} m_screen.unlock(); }
 
 const int version = 1;
@@ -97,7 +103,7 @@ std::string heureDebut() {
 	err = _localtime64_s(&newtime, &long_time);
 	if (err)
 	{
-		std::cerr << heureDebut() << "Invalid argument to _localtime64_s.\n";
+		std::cerr << "Invalid argument to _localtime64_s.\n";
 		exit(1);
 	}
 
@@ -105,7 +111,10 @@ std::string heureDebut() {
 
 	std::ostringstream oss;
 
-	oss << std::setw(2) << std::setfill('0') << newtime.tm_hour << ":" << newtime.tm_min << ":" << newtime.tm_sec << " : ";
+	oss << std::setfill('0') 
+		<< std::setw(2) << newtime.tm_hour << ":" 
+		<< std::setw(2) << newtime.tm_min << ":"
+		<< std::setw(2) << newtime.tm_sec << " : ";
 
 	mystr = oss.str();
 	//std::string formatted_str = std::format(
@@ -547,7 +556,41 @@ bool exists_test(const std::string& name) {
 	return (stat(name.c_str(), &buffer) == 0);
 }
 
+bool isModifiedToday(const fs::path& filePath) {
+	if (!fs::exists(filePath)) {
+		std::cerr << "Le fichier n'existe pas.\n";
+		return false;
+	}
+
+	// Récupère le temps de dernière modification
+	auto ftime = fs::last_write_time(filePath);
+	auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+		ftime - fs::file_time_type::clock::now()
+		+ std::chrono::system_clock::now());
+
+	std::time_t file_c_time = std::chrono::system_clock::to_time_t(sctp);
+	std::tm file_tm;
+	localtime_s(&file_tm, &file_c_time);
+	//std::tm file_tm = *std::localtime(&file_c_time);
+
+	// Récupère la date actuelle
+	std::time_t now = std::time(nullptr);
+	//std::tm now_tm = *std::localtime(&now);
+	std::tm now_tm;
+	localtime_s(&now_tm, &now);
+
+	return (file_tm.tm_year == now_tm.tm_year &&
+		file_tm.tm_mon == now_tm.tm_mon &&
+		file_tm.tm_mday == now_tm.tm_mday);
+}
+
 std::string getEtat(std::string fichier) {
+
+	fs::path file = fichier;
+	if (isModifiedToday(file)) {
+		return ETAT_NON_DEMARRE;
+	}
+
 	std::ifstream infile(fichier);
 
 	std::string line;
@@ -618,6 +661,10 @@ void task1(std::string fichier)
 				AFFICHE("backup fini");
 				break;
 			}
+			else if (etat.find(ETAT_NON_DEMARRE) != std::string::npos) {
+				AFFICHE("backup non démarré");
+				break;
+			}
 			else {
 				AFFICHE("autre etat");
 			}
@@ -664,6 +711,9 @@ int main(int argc, char* argv[])
 	SInitialisation* initialisation = NULL;
 
 	AFFICHE("version : " << version);
+
+	//int nombre = 5;
+	//std::cout << std::setfill('0') << std::setw(2) << nombre << std::endl;
 
 	heureCourante = getHeure();
 	initialisation = initialise(argc, argv);
