@@ -558,7 +558,7 @@ bool exists_test(const std::string& name) {
 
 bool isModifiedToday(const fs::path& filePath) {
 	if (!fs::exists(filePath)) {
-		std::cerr << "Le fichier n'existe pas.\n";
+		AFFICHE("Le fichier n'existe pas.");
 		return false;
 	}
 
@@ -568,10 +568,15 @@ bool isModifiedToday(const fs::path& filePath) {
 		ftime - fs::file_time_type::clock::now()
 		+ std::chrono::system_clock::now());
 
+	AFFICHE("ftime:"<<ftime)
+	AFFICHE("sctp:" << sctp)
+
 	std::time_t file_c_time = std::chrono::system_clock::to_time_t(sctp);
 	std::tm file_tm;
 	localtime_s(&file_tm, &file_c_time);
 	//std::tm file_tm = *std::localtime(&file_c_time);
+
+	AFFICHE("file_c_time:" << file_c_time)
 
 	// Récupère la date actuelle
 	std::time_t now = std::time(nullptr);
@@ -579,7 +584,9 @@ bool isModifiedToday(const fs::path& filePath) {
 	std::tm now_tm;
 	localtime_s(&now_tm, &now);
 
-	return (file_tm.tm_year == now_tm.tm_year &&
+	AFFICHE("now:" << now)
+
+	return !(file_tm.tm_year == now_tm.tm_year &&
 		file_tm.tm_mon == now_tm.tm_mon &&
 		file_tm.tm_mday == now_tm.tm_mday);
 }
