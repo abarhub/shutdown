@@ -670,7 +670,6 @@ void task1(std::string fichier)
 			}
 			else if (etat.find(ETAT_NON_DEMARRE) != std::string::npos) {
 				AFFICHE("backup non démarré");
-				break;
 			}
 			else {
 				AFFICHE("autre etat");
